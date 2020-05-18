@@ -184,8 +184,8 @@ def main():
 
 
     # Pytorch has default MNIST dataloader which loads data at each iteration
-    train_dataset_no_aug = TrainDataset(True, 'data/imet-2020-fgvc/labels.csv',
-                'data/imet-2020-fgvc/train_m.csv', 'data/imet-2020-fgvc/train',
+    train_dataset_no_aug = TrainDataset(True, 'data/imet-2020-fgv7c/labels.csv',
+                'data/imet-2020-fgvc7/train_m.csv', 'data/imet-2020-fgvc7/train',
                 transform=transforms.Compose([       # Data preprocessing
                     transforms.ToTensor(),
                     transforms.ToPILImage(),           # Add data augmentation here
