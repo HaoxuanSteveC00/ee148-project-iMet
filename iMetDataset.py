@@ -57,7 +57,7 @@ class TrainDataset(Dataset):
                     df = df.append(self.df.iloc[index,:])
                     df.iloc[-1,1] = l
                     break
-        print(df.shape)
+        # print(df.shape)
         return df
 
 
@@ -70,7 +70,7 @@ class TrainDataset(Dataset):
             idx = idx.tolist()
 
         file_name = self.df['id'].values[idx]
-        file_path = f'./data/imet-2020-fgvc/train/{file_name}.png'
+        file_path = f'./data/imet-2020-fgvc7/train/{file_name}.png'
         image = cv2.imread(file_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         if self.transform:
@@ -82,9 +82,10 @@ class TrainDataset(Dataset):
         # target = torch.zeros(N_CLASSES)
         # for cls in self.df.iloc[idx].attribute_ids.split():
         #     target[int(cls)] = 1
-        target = torch.zeros(1)
-        target[0] = int(self.df.iloc[idx].attribute_ids.split()[0])
-        print(target)
+        # target = torch.zeros(1, dtype=torch.long)
+        # target[0] = int(self.df.iloc[idx].attribute_ids.split()[0])
+
+        target = torch.tensor(int(self.df.iloc[idx].attribute_ids.split()[0]), dtype=torch.long)
         return image, target
 
 

@@ -23,18 +23,23 @@ class Net(nn.Module):
     '''
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=32, kernel_size=(3,3), stride=1)
-        # self.conv2 = nn.Conv2d(8, 8, 3, 1)
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels=6, kernel_size=(3,3), stride=1)
+        self.conv2 = nn.Conv2d(6, 8, 3, 1)
         self.dropout1 = nn.Dropout2d(0.5)
-        # self.dropout2 = nn.Dropout2d(0.5)
-        self.fc1 = nn.Linear(4*1352, 512) # 1 layer: 1352; 2 layer: 200; 3 layer: 8
-        self.fc2 = nn.Linear(512, 10)
+        self.dropout2 = nn.Dropout2d(0.5)
+        self.fc1 = nn.Linear(42632, 10000) # 1 layer: 1352; 2 layer: 200; 3 layer: 8
+        self.fc2 = nn.Linear(10000, 3473)
 
     def forward(self, x):
         x = self.conv1(x)
         x = F.relu(x)
         x = F.max_pool2d(x, 2)
         x = self.dropout1(x)
+
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = self.dropout2(x)
 
         x = torch.flatten(x, 1)
         x = self.fc1(x)
@@ -50,6 +55,11 @@ class Net(nn.Module):
         x = F.max_pool2d(x, 2)
         x = self.dropout1(x)
 
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = self.dropout2(x)
+
         x = torch.flatten(x, 1)
         x = self.fc1(x)
         x = F.relu(x)
@@ -64,7 +74,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
     model.train()   # Set the model to training mode
     train_loss = 0
     for batch_idx, (data, target) in enumerate(train_loader):
-        print(data, target)
+        # print(data, target)
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()               # Clear the gradient
         output = model(data)                # Make predictions
@@ -137,7 +147,7 @@ def main():
                         help='disables CUDA training')
     parser.add_argument('--seed', type=int, default=1, metavar='S',
                         help='random seed (default: 1)')
-    parser.add_argument('--log-interval', type=int, default=10, metavar='N',
+    parser.add_argument('--log-interval', type=int, default=100, metavar='N',
                         help='how many batches to wait before logging training status')
 
     parser.add_argument('--evaluate', action='store_true', default=False,
@@ -184,8 +194,8 @@ def main():
 
 
     # Pytorch has default MNIST dataloader which loads data at each iteration
-    train_dataset_no_aug = TrainDataset(True, 'data/imet-2020-fgv7c/labels.csv',
-                'data/imet-2020-fgvc7/train_m.csv', 'data/imet-2020-fgvc7/train',
+    train_dataset_no_aug = TrainDataset(True, 'data/imet-2020-fgvc7/labels.csv',
+                'data/imet-2020-fgvc7/train.csv', 'data/imet-2020-fgvc7/train/',
                 transform=transforms.Compose([       # Data preprocessing
                     transforms.ToTensor(),
                     transforms.ToPILImage(),           # Add data augmentation here
