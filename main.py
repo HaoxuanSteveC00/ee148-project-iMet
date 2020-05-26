@@ -11,6 +11,7 @@ from torch.utils.data.sampler import SubsetRandomSampler
 import numpy as np
 import os
 from iMetDataset import *
+import matplotlib.pyplot as plt
 
 '''
 This code is adapted from last homework.
@@ -23,12 +24,12 @@ class Net(nn.Module):
     '''
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=3, out_channels=6, kernel_size=(3,3), stride=1)
-        self.conv2 = nn.Conv2d(6, 8, 3, 1)
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels=1, kernel_size=(3,3), stride=1)
+        # self.conv2 = nn.Conv2d(6, 8, 3, 1)
         self.dropout1 = nn.Dropout2d(0.5)
-        self.dropout2 = nn.Dropout2d(0.5)
-        self.fc1 = nn.Linear(42632, 10000) # 1 layer: 1352; 2 layer: 200; 3 layer: 8
-        self.fc2 = nn.Linear(10000, 3473)
+        # self.dropout2 = nn.Dropout2d(0.5)
+        self.fc1 = nn.Linear(22201, 5000) # 1 layer: 1352; 2 layer: 200; 3 layer: 8
+        self.fc2 = nn.Linear(5000, 3474)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -36,10 +37,10 @@ class Net(nn.Module):
         x = F.max_pool2d(x, 2)
         x = self.dropout1(x)
 
-        x = self.conv2(x)
-        x = F.relu(x)
-        x = F.max_pool2d(x, 2)
-        x = self.dropout2(x)
+        # x = self.conv2(x)
+        # x = F.relu(x)
+        # x = F.max_pool2d(x, 2)
+        # x = self.dropout2(x)
 
         x = torch.flatten(x, 1)
         x = self.fc1(x)
@@ -55,10 +56,10 @@ class Net(nn.Module):
         x = F.max_pool2d(x, 2)
         x = self.dropout1(x)
 
-        x = self.conv2(x)
-        x = F.relu(x)
-        x = F.max_pool2d(x, 2)
-        x = self.dropout2(x)
+        # x = self.conv2(x)
+        # x = F.relu(x)
+        # x = F.max_pool2d(x, 2)
+        # x = self.dropout2(x)
 
         x = torch.flatten(x, 1)
         x = self.fc1(x)
@@ -135,7 +136,7 @@ def main():
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=14, metavar='N',
+    parser.add_argument('--epochs', type=int, default=10, metavar='N',
                         help='number of epochs to train (default: 14)')
     parser.add_argument('--lr', type=float, default=1.0, metavar='LR',
                         help='learning rate (default: 1.0)')
@@ -292,17 +293,17 @@ def main():
         val_losses.append(val_loss)
         scheduler.step()    # learning rate scheduler
         # You may optionally save your model at each epoch here
+        if args.save_model:
+            torch.save(model.state_dict(), "mnist_model.pt")
 
-    plt.plot(range(1, args.epochs + 1), train_losses)
-    plt.plot(range(1, args.epochs + 1), val_losses)
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.legend(["Training loss", "Val loss"])
-    plt.title("Training loss and val loss as a function of the epoch")
-    plt.show()
+    # plt.plot(range(1, args.epochs + 1), train_losses)
+    # plt.plot(range(1, args.epochs + 1), val_losses)
+    # plt.xlabel("Epoch")
+    # plt.ylabel("Loss")
+    # plt.legend(["Training loss", "Val loss"])
+    # plt.title("Training loss and val loss as a function of the epoch")
+    # plt.show()
 
-    if args.save_model:
-        torch.save(model.state_dict(), "mnist_model.pt")
 
 
 if __name__ == '__main__':
