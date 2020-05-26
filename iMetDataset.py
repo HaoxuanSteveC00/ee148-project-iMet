@@ -29,7 +29,7 @@ class TrainDataset(Dataset):
         self.labels_frame = pd.read_csv(label_info_csv)
         self.root_dir = root_dir
         self.transform = transform
-        self.kmeans = np.loadtxt("data/kmeans200.txt", dtype=int)
+        self.kmeans = np.loadtxt("data/kmeans20.txt", dtype=int)
 
         # self.labels = ['0', '1', '10', '100', '1000', '1001', '1002', '1003', '1004', '1005']
         # # self.label_idx = [int(t) for t in self.find_most_freq_labels(50)]

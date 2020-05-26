@@ -12,6 +12,8 @@ import numpy as np
 import os
 from iMetDataset import *
 import matplotlib.pyplot as plt
+import torchvision.models as M
+
 
 '''
 This code is adapted from last homework.
@@ -238,7 +240,7 @@ def main():
 
 
     # Load your model [fcNet, ConvNet, Net]
-    model = Net().to(device)
+    model = M.resnet50(num_classes=20).to(device)
     # summary(model, (1,28,28))
 
     # Try different optimzers here [Adam, SGD, RMSprop]
