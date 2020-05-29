@@ -26,12 +26,12 @@ class Net(nn.Module):
     '''
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=3, out_channels=1, kernel_size=(3,3), stride=1)
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels=6, kernel_size=(3,3), stride=1)
         self.conv2 = nn.Conv2d(6, 8, 3, 1)
         self.dropout1 = nn.Dropout2d(0.5)
         self.dropout2 = nn.Dropout2d(0.5)
-        self.fc1 = nn.Linear(22201, 5000) # 1 layer: 1352; 2 layer: 200; 3 layer: 8
-        self.fc2 = nn.Linear(5000, 3474)
+        self.fc1 = nn.Linear(42632, 5000) # 1 layer: 1352; 2 layer: 200; 3 layer: 8
+        self.fc2 = nn.Linear(5000, 99)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -173,26 +173,26 @@ def main():
 
 
     # Evaluate on the official test set
-    if args.evaluate:
-        assert os.path.exists(args.load_model)
-
-        # Set the test model
-        model = Net().to(device)
-        model = M.resnet18(num_classes=99).to(device)
-        model.load_state_dict(torch.load(args.load_model))
-
-        test_dataset = datasets.MNIST('./data', train=False,
-                    transform=transforms.Compose([
-                        transforms.ToTensor(),
-                        transforms.Normalize((0.1307,), (0.3081,))
-                    ]))
-
-        test_loader = torch.utils.data.DataLoader(
-            test_dataset, batch_size=args.test_batch_size, shuffle=True, **kwargs)
-
-        test(model, device, test_loader, analysis=True)
-
-        return
+    # if args.evaluate:
+    #     assert os.path.exists(args.load_model)
+    #
+    #     # Set the test model
+    #     model = Net().to(device)
+    #     model = M.resnet18(num_classes=99).to(device)
+    #     model.load_state_dict(torch.load(args.load_model))
+    #
+    #     test_dataset = datasets.MNIST('./data', train=False,
+    #                 transform=transforms.Compose([
+    #                     transforms.ToTensor(),
+    #                     transforms.Normalize((0.1307,), (0.3081,))
+    #                 ]))
+    #
+    #     test_loader = torch.utils.data.DataLoader(
+    #         test_dataset, batch_size=args.test_batch_size, shuffle=True, **kwargs)
+    #
+    #     test(model, device, test_loader, analysis=True)
+    #
+    #     return
 
 
 
@@ -241,7 +241,8 @@ def main():
 
 
     # Load your model [fcNet, ConvNet, Net]
-    model = M.resnet50(num_classes=20).to(device)
+    model = Net().to(device)
+    # model = M.resnet18(num_classes=99).to(device)
     # summary(model, (1,28,28))
 
     # Try different optimzers here [Adam, SGD, RMSprop]
