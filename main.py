@@ -27,9 +27,9 @@ class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=1, kernel_size=(3,3), stride=1)
-        # self.conv2 = nn.Conv2d(6, 8, 3, 1)
+        self.conv2 = nn.Conv2d(6, 8, 3, 1)
         self.dropout1 = nn.Dropout2d(0.5)
-        # self.dropout2 = nn.Dropout2d(0.5)
+        self.dropout2 = nn.Dropout2d(0.5)
         self.fc1 = nn.Linear(22201, 5000) # 1 layer: 1352; 2 layer: 200; 3 layer: 8
         self.fc2 = nn.Linear(5000, 3474)
 
@@ -39,10 +39,10 @@ class Net(nn.Module):
         x = F.max_pool2d(x, 2)
         x = self.dropout1(x)
 
-        # x = self.conv2(x)
-        # x = F.relu(x)
-        # x = F.max_pool2d(x, 2)
-        # x = self.dropout2(x)
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = self.dropout2(x)
 
         x = torch.flatten(x, 1)
         x = self.fc1(x)
@@ -58,10 +58,10 @@ class Net(nn.Module):
         x = F.max_pool2d(x, 2)
         x = self.dropout1(x)
 
-        # x = self.conv2(x)
-        # x = F.relu(x)
-        # x = F.max_pool2d(x, 2)
-        # x = self.dropout2(x)
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = self.dropout2(x)
 
         x = torch.flatten(x, 1)
         x = self.fc1(x)
@@ -178,6 +178,7 @@ def main():
 
         # Set the test model
         model = Net().to(device)
+        model = M.resnet18(num_classes=99).to(device)
         model.load_state_dict(torch.load(args.load_model))
 
         test_dataset = datasets.MNIST('./data', train=False,
@@ -198,7 +199,7 @@ def main():
 
     # Pytorch has default MNIST dataloader which loads data at each iteration
     train_dataset_no_aug = TrainDataset(True, 'data/imet-2020-fgvc7/labels.csv',
-                'data/imet-2020-fgvc7/train.csv', 'data/imet-2020-fgvc7/train/',
+                'data/imet-2020-fgvc7/train_country.csv', 'data/imet-2020-fgvc7/train/',
                 transform=transforms.Compose([       # Data preprocessing
                     transforms.ToTensor(),
                     transforms.ToPILImage(),           # Add data augmentation here
@@ -249,41 +250,41 @@ def main():
     # Set your learning rate scheduler
     scheduler = StepLR(optimizer, step_size=args.step, gamma=args.gamma)
 
-    if args.test_datasize:
-        train_final_loss = []
-        val_final_loss = []
-        train_size = []
-        for i in [1, 2, 4, 8, 16]:
-            print("Dataset with size 1/{} of original: ".format(i))
-            subset_indices_train_sub = np.random.choice(subset_indices_train, int(len(subset_indices_train)/i), replace=False)
-            train_loader_sub = torch.utils.data.DataLoader(
-                train_dataset_with_aug, batch_size=args.batch_size,
-                sampler=SubsetRandomSampler(subset_indices_train_sub)
-            )
-            train_losses = []
-            val_losses = []
-            for epoch in range(1, args.epochs + 1):
-                train_loss = train(args, model, device, train_loader_sub, optimizer, epoch)
-                val_loss = validation(model, device, val_loader)
-                train_losses.append(train_loss)
-                val_losses.append(val_loss)
-                scheduler.step()    # learning rate scheduler
-                # You may optionally save your model at each epoch here
-            print("Train Loss: ", train_losses)
-            print("Test Loss: ", val_losses)
-            print("\n")
-            train_final_loss.append(train_losses[-1])
-            val_final_loss.append(val_losses[-1])
-            train_size.append(int(len(subset_indices_train)/i))
-
-        plt.loglog(range(1, args.epochs + 1), train_losses)
-        plt.loglog(range(1, args.epochs + 1), val_losses)
-        plt.xlabel("Number of training examples")
-        plt.ylabel("Loss")
-        plt.legend(["Training loss", "Val loss"])
-        plt.title("Training loss and val loss as a function of the number of training examples on log-log scale")
-        plt.show()
-        return
+    # if args.test_datasize:
+    #     train_final_loss = []
+    #     val_final_loss = []
+    #     train_size = []
+    #     for i in [1, 2, 4, 8, 16]:
+    #         print("Dataset with size 1/{} of original: ".format(i))
+    #         subset_indices_train_sub = np.random.choice(subset_indices_train, int(len(subset_indices_train)/i), replace=False)
+    #         train_loader_sub = torch.utils.data.DataLoader(
+    #             train_dataset_with_aug, batch_size=args.batch_size,
+    #             sampler=SubsetRandomSampler(subset_indices_train_sub)
+    #         )
+    #         train_losses = []
+    #         val_losses = []
+    #         for epoch in range(1, args.epochs + 1):
+    #             train_loss = train(args, model, device, train_loader_sub, optimizer, epoch)
+    #             val_loss = validation(model, device, val_loader)
+    #             train_losses.append(train_loss)
+    #             val_losses.append(val_loss)
+    #             scheduler.step()    # learning rate scheduler
+    #             # You may optionally save your model at each epoch here
+    #         print("Train Loss: ", train_losses)
+    #         print("Test Loss: ", val_losses)
+    #         print("\n")
+    #         train_final_loss.append(train_losses[-1])
+    #         val_final_loss.append(val_losses[-1])
+    #         train_size.append(int(len(subset_indices_train)/i))
+    #
+    #     plt.loglog(range(1, args.epochs + 1), train_losses)
+    #     plt.loglog(range(1, args.epochs + 1), val_losses)
+    #     plt.xlabel("Number of training examples")
+    #     plt.ylabel("Loss")
+    #     plt.legend(["Training loss", "Val loss"])
+    #     plt.title("Training loss and val loss as a function of the number of training examples on log-log scale")
+    #     plt.show()
+    #     return
 
     # Training loop
     train_losses = []

@@ -45,7 +45,7 @@ class TrainDataset(Dataset):
     #     """
     #     attribute_ids = self.df.iloc[:,1].str.split()
     #     attribute_ids = pd.Series(np.concatenate(attribute_ids))
-    #     most_freq_labels = attribute_ids.value_counts().sort_index().rename_axis('x').reset_index(name='f')['x'].iloc[0:n].tolist()
+    #     most_freq_labels = attribute_ids.value_counts().rename_axis('x').reset_index(name='f')['x'].iloc[0:n].tolist()
     #     return most_freq_labels
 
 
