@@ -30,8 +30,8 @@ class Net(nn.Module):
         self.conv2 = nn.Conv2d(6, 8, 3, 1)
         self.dropout1 = nn.Dropout2d(0.5)
         self.dropout2 = nn.Dropout2d(0.5)
-        self.fc1 = nn.Linear(42632, 5000) # 1 layer: 1352; 2 layer: 200; 3 layer: 8
-        self.fc2 = nn.Linear(5000, 99)
+        self.fc1 = nn.Linear(42632, 1000) # 1 layer: 1352; 2 layer: 200; 3 layer: 8
+        self.fc2 = nn.Linear(1000, 20)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -81,7 +81,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()               # Clear the gradient
         output = model(data)                # Make predictions
-        loss = F.nll_loss(output, target)   # Compute loss
+        loss = F.cross_entropy(output, target)   # Compute loss
         loss.backward()                     # Gradient computation
         train_loss += loss.item()
         optimizer.step()                    # Perform a single optimization step
@@ -101,7 +101,7 @@ def validation(model, device, test_loader):
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
-            test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+            test_loss += F.cross_entropy(output, target, reduction='sum').item()  # sum up batch loss
             pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
             test_num += len(data)
@@ -136,8 +136,8 @@ def main():
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
-    parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
-                        help='input batch size for testing (default: 1000)')
+    parser.add_argument('--test-batch-size', type=int, default=64, metavar='N',
+                        help='input batch size for testing (default: 64)')
     parser.add_argument('--epochs', type=int, default=10, metavar='N',
                         help='number of epochs to train (default: 14)')
     parser.add_argument('--lr', type=float, default=1.0, metavar='LR',
@@ -199,12 +199,12 @@ def main():
 
     # Pytorch has default MNIST dataloader which loads data at each iteration
     train_dataset_no_aug = TrainDataset(True, 'data/imet-2020-fgvc7/labels.csv',
-                'data/imet-2020-fgvc7/train_country.csv', 'data/imet-2020-fgvc7/train/',
+                'data/imet-2020-fgvc7/train_20country.csv', 'data/imet-2020-fgvc7/train/',
                 transform=transforms.Compose([       # Data preprocessing
-                    transforms.ToTensor(),
                     transforms.ToPILImage(),           # Add data augmentation here
-                    transforms.RandomCrop(300),
-                    transforms.ToTensor()
+                    transforms.RandomResizedCrop(128),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=(0.485,0.456,0.406), std=(0.229,0.224,0.225))
                 ]))
     train_dataset_with_aug = train_dataset_no_aug
     assert(len(train_dataset_no_aug) == len(train_dataset_with_aug))
@@ -241,8 +241,8 @@ def main():
 
 
     # Load your model [fcNet, ConvNet, Net]
-    model = Net().to(device)
-    # model = M.resnet18(num_classes=99).to(device)
+    #model = Net().to(device)
+    model = M.resnet18(num_classes=20).to(device)
     # summary(model, (1,28,28))
 
     # Try different optimzers here [Adam, SGD, RMSprop]
