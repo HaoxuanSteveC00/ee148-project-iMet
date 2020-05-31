@@ -30,7 +30,7 @@ class Net(nn.Module):
         self.conv2 = nn.Conv2d(6, 8, 3, 1)
         self.dropout1 = nn.Dropout2d(0.5)
         self.dropout2 = nn.Dropout2d(0.5)
-        self.fc1 = nn.Linear(42632, 5000) # 1 layer: 1352; 2 layer: 200; 3 layer: 8
+        self.fc1 = nn.Linear(42632, 5000)
         self.fc2 = nn.Linear(5000, 99)
 
     def forward(self, x):
@@ -81,7 +81,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()               # Clear the gradient
         output = model(data)                # Make predictions
-        loss = F.nll_loss(output, target)   # Compute loss
+        loss = F.cross_entropy(output, target)   # Compute loss
         loss.backward()                     # Gradient computation
         train_loss += loss.item()
         optimizer.step()                    # Perform a single optimization step
@@ -101,7 +101,7 @@ def validation(model, device, test_loader):
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
-            test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+            test_loss += F.cross_entropy(output, target, reduction='sum').item()  # sum up batch loss
             pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
             test_num += len(data)

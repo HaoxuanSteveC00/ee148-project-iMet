@@ -85,8 +85,9 @@ class TrainDataset(Dataset):
         #     target[int(cls)] = 1
 
         # target = torch.tensor(int(self.df.iloc[idx].attribute_ids.split()[0]), dtype=torch.long)
-
-        target = torch.tensor(self.kmeans[idx], dtype=torch.long)
+        # target = torch.tensor(self.kmeans[idx], dtype=torch.long)
+        target = torch.tensor(int(self.df.iloc[idx].attribute_ids), dtype=torch.long)
+        print(target)
         return image, target
 
 
