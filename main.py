@@ -242,7 +242,8 @@ def main():
 
     # Load your model [fcNet, ConvNet, Net]
     #model = Net().to(device)
-    model = M.resnet18(num_classes=20).to(device)
+    model = M.resnet50(num_classes=20).to(device)
+    print(model)
     # summary(model, (1,28,28))
 
     # Try different optimzers here [Adam, SGD, RMSprop]
