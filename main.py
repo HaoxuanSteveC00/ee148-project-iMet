@@ -82,8 +82,8 @@ def train(args, model, device, train_loader, optimizer, epoch):
         optimizer.zero_grad()               # Clear the gradient
         output = model(data)                # Make predictions
         loss = F.cross_entropy(output, target)   # Compute loss
+        train_loss += F.cross_entropy(output, target, reduction='sum').item()
         loss.backward()                     # Gradient computation
-        train_loss += loss.item()
         optimizer.step()                    # Perform a single optimization step
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
@@ -111,7 +111,7 @@ def validation(model, device, test_loader):
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, test_num,
         100. * correct / test_num))
-    return test_loss
+    return (correct/test_num, test_loss)
 
 
 ''' TODO
@@ -198,11 +198,20 @@ def main():
 
 
     # Pytorch has default MNIST dataloader which loads data at each iteration
+    # train_dataset_no_aug = TrainDataset(True, 'data/imet-2020-fgvc7/labels.csv',
+    #             'data/imet-2020-fgvc7/train_20country.csv', 'data/imet-2020-fgvc7/train/',
+    #             transform=transforms.Compose([       # Data preprocessing
+    #                 transforms.ToPILImage(),           # Add data augmentation here
+    #                 transforms.RandomResizedCrop(128),
+    #                 transforms.ToTensor(),
+    #                 transforms.Normalize(mean=(0.485,0.456,0.406), std=(0.229,0.224,0.225))
+    #             ]))
     train_dataset_no_aug = TrainDataset(True, 'data/imet-2020-fgvc7/labels.csv',
                 'data/imet-2020-fgvc7/train_20country.csv', 'data/imet-2020-fgvc7/train/',
                 transform=transforms.Compose([       # Data preprocessing
                     transforms.ToPILImage(),           # Add data augmentation here
-                    transforms.RandomResizedCrop(128),
+                    transforms.Resize(255),
+                    transforms.RandomCrop(224),
                     transforms.ToTensor(),
                     transforms.Normalize(mean=(0.485,0.456,0.406), std=(0.229,0.224,0.225))
                 ]))
@@ -242,8 +251,13 @@ def main():
 
     # Load your model [fcNet, ConvNet, Net]
     #model = Net().to(device)
-    model = M.resnet50(num_classes=20).to(device)
-    print(model)
+    # model = M.resnet50(num_classes=20).to(device)
+    # model.load_state_dict(torch.load(args.load_model))
+    model = M.resnet50(pretrained=True)
+    model.fc = nn.Linear(model.fc.in_features, 20)
+    model = model.to(device)
+    # model.load_state_dict(torch.load(args.load_model))
+    # print(model)
     # summary(model, (1,28,28))
 
     # Try different optimzers here [Adam, SGD, RMSprop]
@@ -291,24 +305,32 @@ def main():
     # Training loop
     train_losses = []
     val_losses = []
+    accuracies = []
     for epoch in range(1, args.epochs + 1):
         train_loss = train(args, model, device, train_loader, optimizer, epoch)
-        val_loss = validation(model, device, val_loader)
+        (accuracy, val_loss) = validation(model, device, val_loader)
         train_losses.append(train_loss)
         val_losses.append(val_loss)
+        accuracies.append(accuracy)
         scheduler.step()    # learning rate scheduler
         # You may optionally save your model at each epoch here
         if args.save_model:
             torch.save(model.state_dict(), "mnist_model.pt")
 
-    # plt.plot(range(1, args.epochs + 1), train_losses)
-    # plt.plot(range(1, args.epochs + 1), val_losses)
-    # plt.xlabel("Epoch")
-    # plt.ylabel("Loss")
-    # plt.legend(["Training loss", "Val loss"])
-    # plt.title("Training loss and val loss as a function of the epoch")
-    # plt.show()
+    plt.plot(range(1, args.epochs + 1), train_losses)
+    plt.plot(range(1, args.epochs + 1), val_losses)
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend(["Training loss", "Val loss"])
+    plt.title("Training loss and val loss as a function of the epoch")
+    plt.show()
 
+    plt.plot(range(1, args.epochs + 1), accuracies)
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.legend(["Validation Accuracy"])
+    plt.title("Accuracy in validation set as a function of the epoch")
+    plt.show()
 
 
 if __name__ == '__main__':

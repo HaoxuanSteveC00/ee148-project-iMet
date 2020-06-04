@@ -7,12 +7,14 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 import numpy as np
 from scipy.spatial.distance import cdist
+from iMetDataset import *
+from torch.utils.data.sampler import SubsetRandomSampler
 
 
 class BorisNet(nn.Module):
     def __init__(self):
         super(BorisNet, self).__init__()
-        self.fc = nn.Linear(784, 10, bias=False)
+        self.fc = nn.Linear(49152, 10, bias=False)
 
     def forward(self, x):
         return self.fc(x.view(x.size(0), -1))
@@ -21,7 +23,7 @@ class BorisNet(nn.Module):
 class BorisConvNet(nn.Module):
     def __init__(self):
         super(BorisConvNet, self).__init__()
-        self.conv = nn.Conv2d(1, 10, 28, stride=1, padding=14)
+        self.conv = nn.Conv2d(1, 10, 128, stride=1, padding=14)
         self.fc = nn.Linear(4 * 4 * 10, 10, bias=False)
 
     def forward(self, x):
@@ -30,11 +32,11 @@ class BorisConvNet(nn.Module):
         return self.fc(x.view(x.size(0), -1))
 
 class BorisGraphNet(nn.Module):
-    def __init__(self, img_size=28, pred_edge=False):
+    def __init__(self, img_size=128, pred_edge=False):
         super(BorisGraphNet, self).__init__()
         self.pred_edge = pred_edge
         N = img_size ** 2
-        self.fc = nn.Linear(N, 10, bias=False)
+        self.fc = nn.Linear(N, 20, bias=False)
         if pred_edge:
             col, row = np.meshgrid(np.arange(img_size), np.arange(img_size))
             coord = np.stack((col, row), axis=2).reshape(-1, 2)
@@ -74,7 +76,7 @@ class BorisGraphNet(nn.Module):
         A_hat = D_hat.view(-1, 1) * A * D_hat.view(1, -1)  # N,N
 
         # Some additional trick I found to be useful
-        A_hat[A_hat > 0.0001] = A_hat[A_hat > 0.0001] - 0.2
+        # A_hat[A_hat > 0.0001] = A_hat[A_hat > 0.0001] - 0.2
 
         print(A_hat[:10, :10])
         return A_hat
@@ -152,20 +154,33 @@ def main():
 
     device = torch.device("cpu")
 
-    kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
+    # Pytorch has default MNIST dataloader which loads data at each iteration
+    train_dataset_no_aug = TrainDataset(True, 'data/imet-2020-fgvc7/labels.csv',
+                'data/imet-2020-fgvc7/train_20country.csv', 'data/imet-2020-fgvc7/train/',
+                transform=transforms.Compose([       # Data preprocessing
+                    transforms.ToPILImage(),           # Add data augmentation here
+                    transforms.RandomResizedCrop(128),
+                    transforms.Grayscale(),
+                    transforms.ToTensor(),
+                    # transforms.Normalize(mean=(0.485,0.456,0.406), std=(0.229,0.224,0.225))
+                ]))
+    train_dataset_with_aug = train_dataset_no_aug
+    assert(len(train_dataset_no_aug) == len(train_dataset_with_aug))
+
+    np.random.seed(args.seed)
+    subset_indices_valid = np.random.choice( len(train_dataset_no_aug), int(0.15*len(train_dataset_no_aug)), replace=False )
+    subset_indices_train = [i for i in range(len(train_dataset_no_aug)) if i not in subset_indices_valid]
+    assert (len(subset_indices_train) + len(subset_indices_valid)) == len(train_dataset_no_aug)
+    assert len(np.intersect1d(subset_indices_train,subset_indices_valid)) == 0
+
     train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=True, download=True,
-                       transform=transforms.Compose([
-                           transforms.ToTensor(),
-                           transforms.Normalize((0.1307,), (0.3081,))
-                       ])),
-        batch_size=args.batch_size, shuffle=True, **kwargs)
-    test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=False, transform=transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.1307,), (0.3081,))
-        ])),
-        batch_size=args.test_batch_size, shuffle=False, **kwargs)
+        train_dataset_with_aug, batch_size=args.batch_size,
+        sampler=SubsetRandomSampler(subset_indices_train)
+    )
+    val_loader = torch.utils.data.DataLoader(
+        train_dataset_no_aug, batch_size=args.test_batch_size,
+        sampler=SubsetRandomSampler(subset_indices_valid)
+    )
 
     if args.model == 'fc':
         assert not args.pred_edge, "this flag is meant for graphs"
@@ -184,7 +199,7 @@ def main():
 
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
-        test(args, model, device, test_loader)
+        test(args, model, device, val_loader)
 
 
 if __name__ == '__main__':
